@@ -1,5 +1,4 @@
-
-const { app, BrowserWindow,ipcMain} = require('electron')
+const { app, BrowserWindow,ipcMain,dialog} = require('electron')
 const fs = require("fs");
 const path = require('node:path');
 const process = require('process'); 
@@ -15,7 +14,7 @@ const createWindow = () => {
     }
   })
 
-  win.loadFile('index.html')
+  win.loadFile('./src/index.html')
 }
 const getConfig=()=>{
     const config=(app.getPath('userData'))+'/config.json';
@@ -95,18 +94,23 @@ async function generateUserHuds(userid,hud_config){
   fs.writeFileSync(filename,JSON.stringify(huds,null,2))
   console.log('written');
 }
-function generate(){
+async function generate(){
     const config=getConfig();
     for (const [key, value] of Object.entries(config)) {
-        generateUserHuds(key,value);
+        console.log('generate hud for user'+key);
+        await generateUserHuds(key,value);
+        console.log('end generate hud for user'+key);
+        
     }
+    console.log('show_message');
+    dialog.showMessageBoxSync(null,{message:'all generated)',type:'info'});
 }
 
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     if(process.argv.includes('--silent')){
         console.log('start generate');
-        generate();
+        await generate();
         console.log('start generated');
         app.quit(); 
         return;
