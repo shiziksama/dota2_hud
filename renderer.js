@@ -35,10 +35,17 @@ const load_hud =()=>{
     //position,ratings,count;
     const list=hud.configs[document.getElementById('hudname').value]['categories'];
     hud_div.innerHtml='';
-    const values=config[document.getElementById('userid').value][hud.configs[document.getElementById('hudname').value]['config_name']];
+    const userid=document.getElementById('userid').value;
+    
+    const hudname=hud.configs[document.getElementById('hudname').value]['config_name'];
+    let values={};
+    if((config[userid])&&(config[userid][hudname])){
+        values=config[userid][hudname];
+    }
     for(let i=0;i<list.length;i++){
         const name=list[i].category_name;
-        const element_values=values[name];
+        const element_values=values[name]??[];
+        
         //console.log(element_values);
         hud_div.innerHTML += `<div class="hud_element">
             <span>${list[i].category_name}</span>
@@ -97,7 +104,7 @@ document.getElementById('save').addEventListener('click',function(e){
     conf_new[document.getElementById("userid").value][hud.configs[document.getElementById('hudname').value]['config_name']]=formdata['hud'];
     window.versions.setConfig(conf_new);
 });
-document.getElementById('save').addEventListener('generate',function(e){
+document.getElementById('generate').addEventListener('click',function(e){
     e.preventDefault();
     window.versions.generate();
 });

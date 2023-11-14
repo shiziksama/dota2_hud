@@ -1,10 +1,11 @@
-require('update-electron-app')()
 
 const { app, BrowserWindow,ipcMain} = require('electron')
 const fs = require("fs");
 const path = require('node:path');
 const process = require('process'); 
 
+
+if(require('electron-squirrel-startup')) return;
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -104,11 +105,13 @@ function generate(){
 
 app.whenReady().then(() => {
     if(process.argv.includes('--silent')){
+        console.log('start generate');
         generate();
+        console.log('start generated');
         app.quit(); 
         return;
     }
-    console.log(process.argv);
+    //console.log(process.argv);
 //    generate();    return;
     ipcMain.handle('generate', generate);
     ipcMain.handle('userlist', () => {
