@@ -1,14 +1,9 @@
+require('update-electron-app')()
+
 const { app, BrowserWindow,ipcMain} = require('electron')
 const fs = require("fs");
 const path = require('node:path');
 const process = require('process'); 
-//import axios from "axios";
-/*
-const axiosInstance = axios.create({
-    baseURL: 'https://dota2.weblamas.com/',
-    timeout: 30000,
-});
-&*/
 
 
 const createWindow = () => {

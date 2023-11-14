@@ -1,4 +1,17 @@
 module.exports = {
+    publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'shiziksama',
+          name: 'dota2_hud'
+        },
+        prerelease: false,
+        draft: true
+      }
+    }
+  ],
   packagerConfig: {
     asar: true,
   },
@@ -28,3 +41,6 @@ module.exports = {
     },
   ],
 };
+
+
+
