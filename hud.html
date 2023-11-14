@@ -1,0 +1,52 @@
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="./jquery-ui-1.13.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" type="text/css" href="./jquery-ui-1.13.2/jquery-ui.min.css">
+<div class="screen">
+    <div class="hud">
+        <div class="block"></div>
+    </div>
+    <div class="controls-wr"><div class="controls">somecontrols</div></div>
+</div>
+<style>
+body{
+    margin:0;
+}
+.screen{
+    padding:10px;
+    display:flex;
+}
+.controls-wr{
+    flex:1;
+    margin-left:10px;
+}
+.controls{
+    background:blue;
+}
+.hud{
+width:1200px;
+height:500px;
+background:red;
+position:relative;
+}
+.block{
+position:absolute;
+width:100px;
+height:100px;
+top:0px;
+left:0px;
+background:green;
+resize:both;
+}
+</style>
+<script>
+$('.block')
+.draggable({ 
+    containment: "parent",
+    grid: [20,20],
+})
+.resizable({
+    containment: ".hud",
+    grid:10,
+    aspectRatio:43/75,
+});
+</script>
