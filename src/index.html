@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <title>Dota 2 Hud Generator</title>
-    <link rel="stylesheet" href="./css/style.css"></link>
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+  <title>Dota 2 Hud Generator</title>
+  <link rel="stylesheet" href="./css/style.css"></link>
+</head>
+<body>
+<form id="form">
+  <div>
+    <label for="api-key">Stratz API Key:</label>
+    <input type="text" id="api-key" name="apiKey" placeholder="Enter your Stratz API Key">
+  </div>
+  <div>
+    <label for="userid">User ID:</label>
     <select name="userid" id="userid"></select>
+  </div>
+  <div>
+    <label for="hudname">HUD Name:</label>
     <select name="hudname" id="hudname"></select>
-    <form id="form">
-    <div id="hud"></div>
-    <button id="save">save</button> <button id="generate">generate</button>
-    </form>
-    
-    <script src="./js/jquery-3.7.1.min.js"></script>
-    <script src="./js/jquery.serializejson.js"></script>
-    <script src="./js/renderer.js"></script>
-  </body>
+  </div>
+  <div id="hud"></div>
+  <button id="save">Save</button>
+  <button id="generate">Generate</button>
+</form>
+<script src="./js/jquery-3.7.1.min.js"></script>
+<script src="./js/jquery.serializejson.js"></script>
+<script type="module" src="./js/helpers.js"></script>
+<script type="module" src="./js/renderer.js"></script>
+</body>
 </html>

@@ -1,112 +1,156 @@
-var hud=[];//поточний хад, з яким ми працюємо
-var config=[];//отриманий конфіг, який збережений на цьому компі
+import { createCheckbox, createDropdown, POSITIONS, BRACKETS } from "./helpers.js";
 
-const load_config = async()=>{
-    config= await window.versions.getConfig();
-}
-const load_userlist = async () => {
-  const response = await window.versions.userlist();
-  var select = document.getElementById("userid");
-    for(var i = 0; i < response.length; i++) {
-        var opt = response[i];
-        var el = document.createElement("option");
-        el.textContent = opt;
-        el.value = opt;
-        select.appendChild(el);
+let hud = []; // Поточний HUD
+let config = {}; // Глобальна конфігурація
+
+// Завантаження конфігурації
+const loadConfig = async () => {
+    try {
+        config = await window.versions.getConfig();
+        if (config.apiKey) {
+            document.getElementById("api-key").value = config.apiKey;
+        }
+    } catch (error) {
+        console.error("Помилка при завантаженні конфігурації:", error);
     }
-    load_hudlist();
-}
-const load_hudlist = async() =>{
-    hud= await window.versions.getHud(document.getElementById("userid").value);
-    const select = document.getElementById("hudname");
-    for(let i=0;i<hud.configs.length;i++){
-        var opt = hud.configs[i];
-        var el = document.createElement("option");
-        el.textContent = opt.config_name;
-        el.value = i;
-        select.appendChild(el);
+};
+
+// Завантаження списку користувачів
+const loadUserList = async () => {
+    try {
+        const response = await window.versions.userlist();
+        const select = document.getElementById("userid");
+        select.innerHTML = ""; // Очищення попереднього списку
+        response.forEach(userId => {
+            const option = document.createElement("option");
+            option.value = userId;
+            option.textContent = userId;
+            select.appendChild(option);
+        });
+        loadHudList();
+    } catch (error) {
+        console.error("Помилка при завантаженні списку користувачів:", error);
     }
-    load_hud();
-}
+};
 
-
-const load_hud =()=>{
-    const hud_div=document.getElementById('hud');
-    //position,ratings,count;
-    const list=hud.configs[document.getElementById('hudname').value]['categories'];
-    hud_div.innerHtml='';
-    const userid=document.getElementById('userid').value;
-    
-    const hudname=hud.configs[document.getElementById('hudname').value]['config_name'];
-    let values={};
-    if((config[userid])&&(config[userid][hudname])){
-        values=config[userid][hudname];
+// Завантаження списку HUD
+const loadHudList = async () => {
+    try {
+        const userId = document.getElementById("userid").value;
+        hud = await window.versions.getHud(userId);
+        const select = document.getElementById("hudname");
+        select.innerHTML = ""; // Очищення попереднього списку
+        hud.configs.forEach((config, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.textContent = config.config_name;
+            select.appendChild(option);
+        });
+        loadHud();
+    } catch (error) {
+        console.error("Помилка при завантаженні HUD:", error);
     }
-    for(let i=0;i<list.length;i++){
-        const name=list[i].category_name;
-        const element_values=values[name]??[];
-        
-        //console.log(element_values);
-        hud_div.innerHTML += `<div class="hud_element">
-            <span>${list[i].category_name}</span>
-            <label><input type="checkbox" name="hud[${name}][dont_change]" value="1" ${element_values.dont_change?'checked':''}>Dont change</label>
-            <label><input type="checkbox" name="hud[${name}][heroes_left]" value="1" ${element_values.heroes_left?'checked':''}>all other heroes,not in another lists</label>
-            <div class="select"><select name="hud[${name}][position]">
-            <option ${element_values.position=='POSITION_1'?'selected':''}>POSITION_1</option>
-            <option ${element_values.position=='POSITION_2'?'selected':''}>POSITION_2</option>
-            <option ${element_values.position=='POSITION_3'?'selected':''}>POSITION_3</option>
-            <option ${element_values.position=='POSITION_4'?'selected':''}>POSITION_4</option>
-            <option ${element_values.position=='POSITION_5'?'selected':''}>POSITION_5</option>
-            </select></div>
-            <div class="ratings">
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('HERALD')?'checked':''} value="HERALD">HERALD</label>
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('GUARDIAN')?'checked':''} value="GUARDIAN">GUARDIAN</label>
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('CRUSADER')?'checked':''} value="CRUSADER">CRUSADER</label>
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('ARCHON')?'checked':''} value="ARCHON">ARCHON</label>
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('LEGEND')?'checked':''} value="LEGEND">LEGEND</label>
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('ANCIENT')?'checked':''} value="ANCIENT">ANCIENT</label>
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('DIVINE')?'checked':''} value="DIVINE">DIVINE</label>
-            <label><input type="checkbox" name="hud[${name}][bracket_ids][]" ${element_values.bracket_ids?.includes('IMMORTAL')?'checked':''} value="IMMORTAL">IMMORTAL</label>
-            </div>
-            <div class="count">
-                <input type="number" name="hud[${name}][count]" value="${element_values.count?element_values.count:''}">
-            </div>
-        </div>`;
-        
-    }
-}
-function serializeForm () {
-    console.log(jQuery('#form').serialize());
-   const form=document.getElementById('form');
-  // Create a new FormData object
-  const formData = new FormData(form);
-    console.log(formData);
-  // Create an object to hold the name/value pairs
-  const pairs = {};
-const ob=Object.fromEntries(formData);
-console.log(ob);
-  // Add each name/value pair to the object
-  for (const [name, value] of formData) {
-    pairs[name] = value;
-  }
+};
 
-  // Return the object
-  return pairs;
-}
+// Завантаження конкретного HUD
+const loadHud = () => {
+    const hudDiv = document.getElementById("hud");
+    const userId = document.getElementById("userid").value;
+    const hudName = document.getElementById("hudname").value;
+    const selectedConfig = hud.configs[hudName]?.categories || [];
+    const userConfig = (config[userId]?.[hud.configs[hudName]?.config_name]) || {};
 
-document.getElementById("hudname").addEventListener('change',load_hud);
-document.getElementById('userid').addEventListener('change',load_hudlist);
-document.getElementById('save').addEventListener('click',function(e){
+    hudDiv.innerHTML = ""; // Очищення попереднього HUD
+
+    selectedConfig.forEach(category => {
+        const elementValues = userConfig[category.category_name] || {};
+        hudDiv.appendChild(createHudElement(category, elementValues));
+    });
+};
+
+// Створення елемента HUD
+const createHudElement = (category, elementValues) => {
+    const container = document.createElement("div");
+    container.className = "hud_element";
+
+    const categoryLabel = document.createElement("span");
+    categoryLabel.textContent = category.category_name;
+    container.appendChild(categoryLabel);
+
+    // Checkbox: Dont Change
+    container.appendChild(createCheckbox(
+        `hud[${category.category_name}][dont_change]`,
+        "Dont change",
+        elementValues.dont_change
+    ));
+
+    // Checkbox: Heroes Left
+    container.appendChild(createCheckbox(
+        `hud[${category.category_name}][heroes_left]`,
+        "remaining",
+        elementValues.heroes_left
+    ));
+
+    // Dropdown: Position
+    container.appendChild(createDropdown(
+        `hud[${category.category_name}][position]`,
+        POSITIONS,
+        elementValues.position
+    ));
+
+    // Ratings
+    const ratingsDiv = document.createElement("div");
+    ratingsDiv.className = "ratings";
+    BRACKETS.forEach(bracket => {
+        ratingsDiv.appendChild(createCheckbox(
+            `hud[${category.category_name}][bracket_ids][]`,
+            bracket,
+            elementValues.bracket_ids?.includes(bracket),
+            bracket
+        ));
+    });
+    container.appendChild(ratingsDiv);
+
+    // Input: Count
+    const countInput = document.createElement("input");
+    countInput.type = "number";
+    countInput.name = `hud[${category.category_name}][count]`;
+    countInput.value = elementValues.count || "";
+    container.appendChild(countInput);
+
+    return container;
+};
+
+// Обробка подій
+document.getElementById("hudname").addEventListener("change", loadHud);
+document.getElementById("userid").addEventListener("change", loadHudList);
+
+document.getElementById("save").addEventListener("click", async e => {
     e.preventDefault();
-    const formdata=jQuery('#form').serializeJSON();
-    let conf_new=new Object();
-    conf_new[document.getElementById("userid").value]=new Object();
-    conf_new[document.getElementById("userid").value][hud.configs[document.getElementById('hudname').value]['config_name']]=formdata['hud'];
-    window.versions.setConfig(conf_new);
+    const userId = document.getElementById("userid").value;
+    const hudName = hud.configs[document.getElementById("hudname").value]?.config_name;
+
+    // Збираємо всі дані з форми
+    const formData = jQuery("#form").serializeJSON();
+    config.apiKey = formData.apiKey; // Додаємо API Key до конфігурації
+    config[userId] = config[userId] || {};
+    config[userId][hudName] = formData.hud;
+
+    // Зберігаємо конфігурацію
+    try {
+        await window.versions.setConfig(config);
+        alert("Конфігурація успішно збережена!");
+    } catch (error) {
+        console.error("Помилка при збереженні конфігурації:", error);
+        alert("Не вдалося зберегти конфігурацію.");
+    }
 });
-document.getElementById('generate').addEventListener('click',function(e){
+
+document.getElementById("generate").addEventListener("click", e => {
     e.preventDefault();
     window.versions.generate();
 });
-load_userlist();
-load_config();
+
+// Ініціалізація
+loadConfig();
+loadUserList();

@@ -1,3 +1,156 @@
-.hud_element{
-    border:1px solid grey;
+/* Загальний стиль */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+form {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Заголовки */
+form h1 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #555;
+}
+
+/* Поля форми */
+form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+form input,
+form select,
+form button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+form input:focus,
+form select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.25);
+}
+
+form button {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+form button:hover {
+    background-color: #0056b3;
+}
+
+/* Стиль для елементів HUD */
+.hud_element {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background: #f7f7f7;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hud_element span {
+    font-weight: bold;
+    color: #444;
+    margin-right: 10px;
+    flex: 1 1 100%;
+}
+.hud_element input[type="checkbox"] {
+    display: none;
+}
+
+/* Базовий стиль для label */
+.hud_element label {
+    display: inline-block;
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Коли чекбокс активований */
+.hud_element input[type="checkbox"]:checked + label {
+    background-color: #007bff;
+    border-color: #0056b3;
+    color: white;
+}
+
+/* Додатковий ефект наведення */
+.hud_element label:hover {
+    background-color: #e6e6e6;
+    border-color: #ccc;
+}
+.hud_element .ratings {
+    flex: 1 1 100%;
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.hud_element .ratings label {
+    flex: 1 1 calc(25% - 8px);
+}
+
+/* Кнопки в HUD */
+.hud_element .count input {
+    width: 80px;
+    margin-left: 10px;
+}
+
+/* Відступи */
+#hud {
+    margin-top: 20px;
+}
+
+
+/* Відображення помилок або інформаційних повідомлень */
+.alert {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
 }
