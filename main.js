@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const ipcHandlers = require('./ipc/ipcHandlers');
+const hudService = require('./services/hudService');
 
 if (require('electron-squirrel-startup')) return;
 
@@ -18,7 +19,7 @@ const createWindow = () => {
 app.whenReady().then(async () => {
     if (process.argv.includes('--silent')) {
         console.log('start generate');
-        await require('./services/hudService').generate();
+        await hudService.generateUserHuds();
         console.log('start generated');
         app.quit();
         return;
