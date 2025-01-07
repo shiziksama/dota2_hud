@@ -10,7 +10,7 @@ export default {
     },
 
     getConfig() {
-        const configPath = path.join(this.getPath(), 'hsconfig.json');
+        const configPath = path.join(this.getPath(), 'hconfig.json');
         return fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, 'utf-8')) : {};
     },
 
