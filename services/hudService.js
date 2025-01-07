@@ -1,19 +1,21 @@
-const fs = require('fs');
-const pathUtils = require('../utils/pathUtils');
-const stratzApi = require('../api/stratzApi');
-const configService = require('../services/configService');
+import fs from 'fs';
+import * as pathUtils from '../utils/pathUtils.js';
+import * as stratzApi from '../api/stratzApi.js';
+import configService from '../services/configService.js';
 
-async function getHeroIds(playerid, position, bracket_ids, count, apiKey) {
-    const response =await calculateHeroScores(playerid, position, bracket_ids, apiKey);
+export async function getHeroIds(playerId, position, bracketIds, count, apiKey) {
+    const response = await calculateHeroScores(playerId, position, bracketIds, apiKey);
     return count > 0 ? response.slice(0, count) : response;
 }
-const calculateHeroScores = async (playerId, position, bracketIds, apiKey) => {
+
+export async function calculateHeroScores(playerId, position, bracketIds, apiKey) {
     const brackets = {};
 
     // Отримання статистики для кожного рангу
     for (const name of bracketIds) {
         brackets[name] = await stratzApi.fetchWinDays(name, position, apiKey);
     }
+
     let result = {};
 
     // Об'єднання статистики з усіх рангу
@@ -31,7 +33,6 @@ const calculateHeroScores = async (playerId, position, bracketIds, apiKey) => {
     for (const [heroId, heroStat] of Object.entries(heroStats)) {
         result[heroId] = { ...result[heroId], ...heroStat };
     }
-
 
     // Розрахунок середнього впливу (impact)
     const totalMyMatchCount = Object.values(result).reduce((sum, hero) => sum + (hero.my_matchCount || 0), 0);
@@ -64,18 +65,21 @@ const calculateHeroScores = async (playerId, position, bracketIds, apiKey) => {
 
     // Сортування героїв за рейтингом
     result.sort((a, b) => b.score - a.score);
+
     // Повернення ID героїв
     return result.map(hero => hero.hero_id);
-};
+}
 
-async function generateHud(userid, base, config, apiKey) {
+export async function generateHud(userid, base, config, apiKey) {
     let allHeroes = await stratzApi.getAllHeroes(apiKey);
     let leftId = -1;
+
     for (const [key, value] of Object.entries(base)) {
-        base[key]['x_position']=Math.round(value.x_position/10)*10;
-        base[key]['y_position']=Math.round(value.y_position/10)*10;
-        base[key]['width']=Math.round(value.width/10)*10;
-        base[key]['height']=Math.round(value.height/10)*10;
+        base[key]['x_position'] = Math.round(value.x_position / 10) * 10;
+        base[key]['y_position'] = Math.round(value.y_position / 10) * 10;
+        base[key]['width'] = Math.round(value.width / 10) * 10;
+        base[key]['height'] = Math.round(value.height / 10) * 10;
+
         if (!config[value.category_name]) continue;
 
         const curConfig = config[value.category_name];
@@ -94,13 +98,14 @@ async function generateHud(userid, base, config, apiKey) {
     return base;
 }
 
-async function generateUserHuds() {
-    const config=configService.getConfig();
+export async function generateUserHuds() {
+    const config = configService.getConfig();
+
     for (const [userid, hudConfig] of Object.entries(config)) {
-        if(userid=='apiKey')continue;
+        if (userid === 'apiKey') continue;
 
         const hudPath = pathUtils.getHudPath(userid);
-        const huds = JSON.parse(fs.readFileSync(hudPath));
+        const huds = JSON.parse(fs.readFileSync(hudPath, 'utf-8'));
 
         for (const [key, value] of Object.entries(huds.configs)) {
             if (hudConfig[value.config_name]) {
@@ -110,11 +115,16 @@ async function generateUserHuds() {
 
         fs.writeFileSync(hudPath, JSON.stringify(huds, null, 2));
     }
+
     console.log('HUDs written successfully.');
 }
-async function getHud(userid){
+
+export async function getHud(userid) {
     const hudPath = pathUtils.getHudPath(userid);
-    return JSON.parse(fs.readFileSync(hudPath));
+    return JSON.parse(fs.readFileSync(hudPath, 'utf-8'));
 }
 
-module.exports = { generateHud, generateUserHuds, getHud };
+export default {
+    generateUserHuds,
+    getHud
+};

@@ -1,20 +1,21 @@
-const fs = require('fs');
-const path = require('path');
-const { app } = require('electron');
+import fs from 'fs';
+import path from 'path';
+import {app} from 'electron';
 
-function getPath(){
-    if(app){
-        return app.getPath('userData');
+export default {
+    getPath() {
+        if(app) {
+            return app.getPath('userData');
+        }
+    },
+
+    getConfig() {
+        const configPath = path.join(this.getPath(), 'hsconfig.json');
+        return fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, 'utf-8')) : {};
+    },
+
+    setConfig(config) {
+        const configPath = path.join(this.getPath(), 'hconfig.json');
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     }
 }
-function getConfig() {
-    const configPath = path.join(getPath('userData'), 'config.json');
-    return fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath)) : {};
-}
-
-function setConfig(config) {
-    const configPath = path.join(getPath('userData'), 'config.json');
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-}
-
-module.exports = { getConfig, setConfig };
