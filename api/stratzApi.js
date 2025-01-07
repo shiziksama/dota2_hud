@@ -1,7 +1,11 @@
 import Store from 'electron-store';
+import {app} from "electron";
+import path from "path";
 
 // Ініціалізація кешу
-const cache = new Store();
+const cache = new Store({
+    cwd: path.join( app.getPath('userData'), 'cache.json'), // Вкажіть власний шлях
+});
 
 // Отримати WinDays зі Stratz із кешем
 export const fetchWinDays = async (bracketId, position, apiKey) => {
