@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "dota2_hud",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "dota2 hero grid from your stats",
   "main": "main.js",
   "scripts": {
@@ -16,10 +16,10 @@
   "author": "shiziksama",
   "devDependencies": {
     "@electron-forge/cli": "^7.6.0",
-    "@electron-forge/maker-deb": "^6.4.2",
-    "@electron-forge/maker-rpm": "^6.4.2",
-    "@electron-forge/maker-squirrel": "^6.4.2",
-    "@electron-forge/maker-zip": "^6.4.2",
+    "@electron-forge/maker-deb": "^7.6.0",
+    "@electron-forge/maker-rpm": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.6.0",
+    "@electron-forge/maker-zip": "^7.6.0",
     "@electron-forge/plugin-auto-unpack-natives": "^6.4.2",
     "@electron-forge/publisher-github": "^6.4.2",
     "electron": "^33.3.1"
