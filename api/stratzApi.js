@@ -117,7 +117,7 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
 
 // Отримати всі ID героїв зі Stratz із кешем
 export const getAllHeroes = async (apiKey) => {
-    const cacheKey = `getALlHeroes:${bracketId}:${position}:${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
+    const cacheKey = `getALlHeroes:${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
 
