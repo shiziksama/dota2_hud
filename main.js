@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, Notification } from 'electron';
 import path from 'node:path';
 import ipcHandlers from './ipc/ipcHandlers.js';
 import hudService from './services/hudService.js';
+import { fileURLToPath } from 'url';
+
 
 // Перевірка для Electron Squirrel Startup
 if (process.argv.some(arg => arg.includes('--squirrel'))) {
@@ -14,7 +16,7 @@ const createWindow = () => {
         width: 800,
         height: 600,
         webPreferences: {
-            preload: path.join(path.dirname(new URL(import.meta.url).pathname), 'preload.js'),
+            preload: path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'preload.js'),
         },
     });
     win.loadFile('./src/index.html');
@@ -26,10 +28,6 @@ app.whenReady().then(async () => {
         console.log('start generate');
         await hudService.generateUserHuds();
         console.log('start generated');
-        new Notification({
-            title: 'HUD Generator',
-            body: 'All HUDs generated successfully!',
-        }).show();
         app.quit();
         return;
     }
