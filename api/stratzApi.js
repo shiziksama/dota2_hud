@@ -4,7 +4,7 @@ import path from "path";
 
 // Ініціалізація кешу
 const cache = new Store({
-    cwd: path.join( app.getPath('userData'), 'cache.json'), // Вкажіть власний шлях
+    name:  'stratzcache', // Вкажіть власний шлях
 });
 
 // Отримати WinDays зі Stratz із кешем
@@ -63,7 +63,6 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
     const cacheKey = `fetchHeroStats:${playerId}:${position}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
-    console.log('fetchHeroStats');
 
     try {
         const sixMonthsAgo = Math.floor(new Date().setMonth(new Date().getMonth() - 6) / 1000);

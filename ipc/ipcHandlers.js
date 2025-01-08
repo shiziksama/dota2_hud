@@ -6,7 +6,7 @@ export function registerHandlers(ipcMain) {
     ipcMain.handle('generate', hudService.generateUserHuds);
     ipcMain.handle('userlist', () => listDirectories(getSteamFolder()));
     ipcMain.handle('getHud', (event, userid) => hudService.getHud(userid));
-    ipcMain.handle('getConfig', configService.getConfig);
+    ipcMain.handle('getConfig', () => configService.getConfig());
     ipcMain.handle('setConfig', (event, config) => configService.setConfig(config));
 }
 
