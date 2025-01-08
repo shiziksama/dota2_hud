@@ -9,7 +9,7 @@ const cache = new Store({
 
 // Отримати WinDays зі Stratz із кешем
 export const fetchWinDays = async (bracketId, position, apiKey) => {
-    const cacheKey = `fetchWinDays:${bracketId}:${position}:${new Date().toISOString().split('T')[0]}`;
+    const cacheKey = `fetchWinDays:${bracketId}:${position}:${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
     try {
@@ -60,7 +60,7 @@ export const fetchWinDays = async (bracketId, position, apiKey) => {
 
 // Отримати HeroStats зі Stratz із кешем
 export const fetchHeroStats = async (playerId, position, apiKey) => {
-    const cacheKey = `fetchHeroStats:${playerId}:${position}:${new Date().toISOString().split('T')[0]}`;
+    const cacheKey = `fetchHeroStats:${playerId}:${position}:${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
 
@@ -117,7 +117,7 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
 
 // Отримати всі ID героїв зі Stratz із кешем
 export const getAllHeroes = async (apiKey) => {
-    const cacheKey = 'getAllHeroes:${new Date().toISOString().split(\'T\')[0]}';
+    const cacheKey = 'getAllHeroes:${new Date().toISOString().slice(2, 10).replace(/-/g, \'\')}';
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
 
