@@ -74,6 +74,7 @@ export async function calculateHeroScores(playerId, position, bracketIds, apiKey
 export async function generateHud(userid, base, config, apiKey) {
     let allHeroes = await stratzApi.getAllHeroes(apiKey);
     let leftId = -1;
+    let leftConfig = null;
 
     for (const [key, value] of Object.entries(base)) {
         base[key]['x_position'] = Math.round(value.x_position / 10) * 10;
@@ -88,6 +89,7 @@ export async function generateHud(userid, base, config, apiKey) {
 
         if (curConfig.heroes_left) {
             leftId = key;
+            leftConfig = curConfig;
             continue;
         }
 
@@ -95,7 +97,17 @@ export async function generateHud(userid, base, config, apiKey) {
         allHeroes = allHeroes.filter(x => !base[key]['hero_ids'].includes(x));
     }
 
-    base[leftId]['hero_ids'] = allHeroes.filter(Boolean);
+    if (leftId !== -1) {
+        let leftHeroes = allHeroes.filter(Boolean);
+        if (leftConfig) {
+            const sorted = await getHeroIds(userid, null, leftConfig.bracket_ids, 0, apiKey);
+            leftHeroes = sorted.filter(id => leftHeroes.includes(id));
+            if (leftConfig.count > 0) {
+                leftHeroes = leftHeroes.slice(0, leftConfig.count);
+            }
+        }
+        base[leftId]['hero_ids'] = leftHeroes;
+    }
     return base;
 }
 

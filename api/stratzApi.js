@@ -13,13 +13,14 @@ export const fetchWinDays = async (bracketId, position, apiKey) => {
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
     try {
+        const positionPart = position ? `positionIds: [${position}],` : '';
         const requestBody = JSON.stringify({
             query: `
                 {
                     heroStats {
                         winDay(
                             take: 7,
-                            positionIds: [${position}],
+                            ${positionPart}
                             bracketIds: [${bracketId}],
                             gameModeIds: [ALL_PICK_RANKED]
                         ) {
@@ -66,13 +67,14 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
 
     try {
         const sixMonthsAgo = Math.floor(new Date().setMonth(new Date().getMonth() - 6) / 1000);
+        const positionPart = position ? `positionIds: [${position}],` : '';
         const requestBody = JSON.stringify({
             query: `
                 {
                     player(steamAccountId: ${playerId}) {
                         heroesPerformance(
                             request: {
-                                positionIds: [${position}],
+                                ${positionPart}
                                 startDateTime: ${sixMonthsAgo},
                                 take: 5000
                             },
