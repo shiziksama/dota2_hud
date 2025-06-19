@@ -91,12 +91,14 @@ const createHudElement = (category, elementValues) => {
         elementValues.heroes_left
     ));
 
-    // Dropdown: Position
-    container.appendChild(createDropdown(
-        `hud[${category.category_name}][position]`,
-        POSITIONS,
-        elementValues.position
-    ));
+    // Dropdown: Position (не потрібен, якщо вибрано heroes_left)
+    if (!elementValues.heroes_left) {
+        container.appendChild(createDropdown(
+            `hud[${category.category_name}][position]`,
+            POSITIONS,
+            elementValues.position
+        ));
+    }
 
     // Ratings
     const ratingsDiv = document.createElement("div");
