@@ -51,7 +51,9 @@ export const fetchWinDays = async (bracketId, position, apiKey) => {
             return acc;
         }, {});
 
-        cache.set(cacheKey, result); // Збереження в кеш
+        if (Object.keys(result).length) {
+            cache.set(cacheKey, result); // Збереження в кеш
+        }
         return result;
     } catch (error) {
         console.error(`Помилка у fetchWinDays (bracketId: ${bracketId}, position: ${position}):`, error);
@@ -109,7 +111,9 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
             return acc;
         }, {});
 
-        cache.set(cacheKey, result); // Збереження в кеш
+        if (Object.keys(result).length) {
+            cache.set(cacheKey, result); // Збереження в кеш
+        }
         return result;
     } catch (error) {
         console.error(`Помилка у fetchHeroStats (playerId: ${playerId}, position: ${position}):`, error);
@@ -138,7 +142,9 @@ export const getAllHeroes = async (apiKey) => {
         const data = await response.json();
         const result = data?.data?.heroStats?.stats.map(hero => hero.heroId) || [];
 
-        cache.set(cacheKey, result); // Збереження в кеш
+        if (result.length) {
+            cache.set(cacheKey, result); // Збереження в кеш
+        }
         return result;
     } catch (error) {
         console.error('Помилка у getAllHeroes:', error);
