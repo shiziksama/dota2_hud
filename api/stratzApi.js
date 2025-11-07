@@ -1,10 +1,10 @@
 import Store from 'electron-store';
-import {app} from "electron";
+import { app } from "electron";
 import path from "path";
 
 // Ініціалізація кешу
 const cache = new Store({
-    name:  'stratzcache', // Вкажіть власний шлях
+    name: 'stratzcache', // Вкажіть власний шлях
 });
 
 // Отримати WinDays зі Stratz із кешем
