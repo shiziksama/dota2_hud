@@ -9,7 +9,9 @@ const cache = new Store({
 
 // Отримати WinDays зі Stratz із кешем
 export const fetchWinDays = async (bracketId, position, apiKey) => {
-    const cacheKey = `fetchWinDays:${bracketId}:${position}:${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
+    const dateSuffix = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    const baseCacheKey = `fetchWinDays:${bracketId}:${position}`;
+    const cacheKey = `${baseCacheKey}:${dateSuffix}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
     try {
@@ -52,7 +54,8 @@ export const fetchWinDays = async (bracketId, position, apiKey) => {
         }, {});
 
         if (Object.keys(result).length) {
-            cache.set(cacheKey, result); // Збереження в кеш
+            cache.set(cacheKey, result);
+            cache.set(baseCacheKey, result);
         }
         return result;
     } catch (error) {
@@ -63,7 +66,9 @@ export const fetchWinDays = async (bracketId, position, apiKey) => {
 
 // Отримати HeroStats зі Stratz із кешем
 export const fetchHeroStats = async (playerId, position, apiKey) => {
-    const cacheKey = `fetchHeroStats:${playerId}:${position}:${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
+    const dateSuffix = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    const baseCacheKey = `fetchHeroStats:${playerId}:${position}`;
+    const cacheKey = `${baseCacheKey}:${dateSuffix}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
 
@@ -112,7 +117,8 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
         }, {});
 
         if (Object.keys(result).length) {
-            cache.set(cacheKey, result); // Збереження в кеш
+            cache.set(cacheKey, result);
+            cache.set(baseCacheKey, result);
         }
         return result;
     } catch (error) {
@@ -123,7 +129,9 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
 
 // Отримати всі ID героїв зі Stratz із кешем
 export const getAllHeroes = async (apiKey) => {
-    const cacheKey = `getALlHeroes:${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
+    const dateSuffix = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    const baseCacheKey = 'getALlHeroes';
+    const cacheKey = `${baseCacheKey}:${dateSuffix}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) return cachedData;
 
@@ -143,7 +151,8 @@ export const getAllHeroes = async (apiKey) => {
         const result = data?.data?.heroStats?.stats.map(hero => hero.heroId) || [];
 
         if (result.length) {
-            cache.set(cacheKey, result); // Збереження в кеш
+            cache.set(cacheKey, result);
+            cache.set(baseCacheKey, result);
         }
         return result;
     } catch (error) {
