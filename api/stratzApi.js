@@ -60,7 +60,7 @@ export const fetchWinDays = async (bracketId, position, apiKey) => {
         return result;
     } catch (error) {
         console.error(`Помилка у fetchWinDays (bracketId: ${bracketId}, position: ${position}):`, error);
-        return {};
+        return cache.get(baseCacheKey);
     }
 };
 
@@ -123,7 +123,7 @@ export const fetchHeroStats = async (playerId, position, apiKey) => {
         return result;
     } catch (error) {
         console.error(`Помилка у fetchHeroStats (playerId: ${playerId}, position: ${position}):`, error);
-        return {};
+        return cache.get(baseCacheKey);
     }
 };
 
@@ -157,6 +157,6 @@ export const getAllHeroes = async (apiKey) => {
         return result;
     } catch (error) {
         console.error('Помилка у getAllHeroes:', error);
-        return [];
+        return cache.get(baseCacheKey);
     }
 };
