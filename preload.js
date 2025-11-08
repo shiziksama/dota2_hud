@@ -1,10 +1,11 @@
-import { contextBridge, ipcRenderer } from 'electron';
+const { contextBridge, ipcRenderer } = require('electron');
+
 
 contextBridge.exposeInMainWorld('versions', {
   userlist: () => ipcRenderer.invoke('userlist'),
   getConfig: () => ipcRenderer.invoke('getConfig'),
-  setConfig: (config) => ipcRenderer.invoke('setConfig',config),
+  setConfig: (config) => ipcRenderer.invoke('setConfig', config),
   generate: () => ipcRenderer.invoke('generate'),
-  getHud: (userid) => ipcRenderer.invoke('getHud',userid),
+  getHud: (userid) => ipcRenderer.invoke('getHud', userid),
   // we can also expose variables, not just functions
 })

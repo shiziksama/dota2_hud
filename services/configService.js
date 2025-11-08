@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import {app} from 'electron';
+import { app } from 'electron';
 
 export default {
     getPath() {
-        if(app) {
+        console.log('App path:', app ? app.getPath('userData') : 'app is undefined');
+        if (app) {
             return app.getPath('userData');
         }
     },

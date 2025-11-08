@@ -2,7 +2,7 @@ import fs from 'fs';
 import * as pathUtils from '../utils/pathUtils.js';
 import * as stratzApi from '../api/stratzApi.js';
 import configService from '../services/configService.js';
-import {Notification} from "electron";
+import { Notification } from "electron";
 
 export async function getHeroIds(playerId, position, bracketIds, count, apiKey) {
     const response = await calculateHeroScores(playerId, position, bracketIds, apiKey);
@@ -39,8 +39,8 @@ export async function calculateHeroScores(playerId, position, bracketIds, apiKey
     const totalMyMatchCount = Object.values(result).reduce((sum, hero) => sum + (hero.my_matchCount || 0), 0);
     const avgImp = totalMyMatchCount !== 0
         ? Object.values(result).reduce((sum, hero) => {
-        return sum + (hero.my_imp || 0) * (hero.my_matchCount || 0);
-    }, 0) / totalMyMatchCount
+            return sum + (hero.my_imp || 0) * (hero.my_matchCount || 0);
+        }, 0) / totalMyMatchCount
         : 0;
 
     // Мінімальна кількість матчів
@@ -73,6 +73,10 @@ export async function calculateHeroScores(playerId, position, bracketIds, apiKey
 
 export async function generateHud(userid, base, config, apiKey) {
     let allHeroes = await stratzApi.getAllHeroes(apiKey);
+    if (!allHeroes || allHeroes.length === 0) {
+        console.error('Failed to retrieve hero list from Stratz API.');
+        allHeroes = [];
+    }
     let leftId = -1;
     let leftConfig = null;
 
@@ -94,6 +98,7 @@ export async function generateHud(userid, base, config, apiKey) {
         }
 
         base[key]['hero_ids'] = await getHeroIds(userid, curConfig.position, curConfig.bracket_ids, curConfig.count, apiKey);
+
         allHeroes = allHeroes.filter(x => !base[key]['hero_ids'].includes(x));
     }
 
@@ -101,7 +106,9 @@ export async function generateHud(userid, base, config, apiKey) {
         let leftHeroes = allHeroes.filter(Boolean);
         if (leftConfig) {
             const sorted = await getHeroIds(userid, null, leftConfig.bracket_ids, 0, apiKey);
-            leftHeroes = sorted.filter(id => leftHeroes.includes(id));
+            let Sorted = sorted.filter(id => leftHeroes.includes(id));
+            leftHeroes = leftHeroes.sort((a, b) => Sorted.indexOf(a) - Sorted.indexOf(b));
+
             if (leftConfig.count > 0) {
                 leftHeroes = leftHeroes.slice(0, leftConfig.count);
             }

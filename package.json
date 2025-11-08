@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "dota2_hud",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "dota2 hero grid from your stats",
   "main": "main.js",
   "scripts": {

@@ -143,10 +143,21 @@ export const getAllHeroes = async (apiKey) => {
                 'Authorization': `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-                query: "{ heroStats { stats { heroId } } }",
+                query: `
+                    {
+                        heroStats {
+                            stats {
+                                heroId
+                            }
+                        }
+                    }
+                `,
             }),
         });
-
+        if (!response.ok) {
+            console.log('Network response was not ok:', response.statusText);
+            throw new Error('Network response was not ok');
+        }
         const data = await response.json();
         const result = data?.data?.heroStats?.stats.map(hero => hero.heroId) || [];
 
@@ -156,7 +167,7 @@ export const getAllHeroes = async (apiKey) => {
         }
         return result;
     } catch (error) {
-        console.error('Помилка у getAllHeroes:', error);
+        console.error('Error in getAllHeroes,returning from cache:', error);
         return cache.get(baseCacheKey);
     }
 };
