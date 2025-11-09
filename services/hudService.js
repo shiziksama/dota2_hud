@@ -1,6 +1,6 @@
 import fs from 'fs';
 import * as pathUtils from '../utils/pathUtils.js';
-import * as stratzApi from '../api/stratzApi.js';
+import { getWinDays, getHeroStats, getAllHeroes } from './cacheService.js';
 import configService from '../services/configService.js';
 import { Notification, app } from "electron";
 
@@ -14,7 +14,7 @@ export async function calculateHeroScores(playerId, position, bracketIds, apiKey
 
     // Отримання статистики для кожного рангу
     for (const name of bracketIds) {
-        brackets[name] = await stratzApi.fetchWinDays(name, position, apiKey);
+        brackets[name] = await getWinDays(name, position, apiKey);
     }
 
     let result = {};
@@ -30,7 +30,7 @@ export async function calculateHeroScores(playerId, position, bracketIds, apiKey
     }
 
     // Додавання статистики гравця
-    const heroStats = await stratzApi.fetchHeroStats(playerId, position, apiKey);
+    const heroStats = await getHeroStats(playerId, position, apiKey);
     for (const [heroId, heroStat] of Object.entries(heroStats)) {
         result[heroId] = { ...result[heroId], ...heroStat };
     }
@@ -72,7 +72,7 @@ export async function calculateHeroScores(playerId, position, bracketIds, apiKey
 }
 
 export async function generateHud(userid, base, config, apiKey) {
-    let allHeroes = await stratzApi.getAllHeroes(apiKey);
+    let allHeroes = await getAllHeroes(apiKey);
     if (!allHeroes || allHeroes.length === 0) {
         console.error('Failed to retrieve hero list from Stratz API.');
         allHeroes = [];
