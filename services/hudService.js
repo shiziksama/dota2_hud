@@ -106,8 +106,13 @@ export async function generateHud(userid, base, config, apiKey) {
         let leftHeroes = allHeroes.filter(Boolean);
         if (leftConfig) {
             const sorted = await getHeroIds(userid, null, leftConfig.bracket_ids, 0, apiKey);
-            let Sorted = sorted.filter(id => leftHeroes.includes(id));
-            leftHeroes = leftHeroes.sort((a, b) => Sorted.indexOf(a) - Sorted.indexOf(b));
+            const sortedSet = new Set(sorted); // для швидкого пошуку
+            leftHeroes = [
+                // 1. герої, які є в sorted і в leftHeroes — у порядку sorted
+                ...sorted.filter(id => leftHeroes.includes(id)),
+                // 2. решта героїв з leftHeroes, яких немає в sorted — у кінці
+                ...leftHeroes.filter(id => !sortedSet.has(id)),
+            ];
 
             if (leftConfig.count > 0) {
                 leftHeroes = leftHeroes.slice(0, leftConfig.count);
