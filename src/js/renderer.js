@@ -3,6 +3,18 @@ import { createCheckbox, createDropdown, POSITIONS, BRACKETS } from "./helpers.j
 let hud = []; // Поточний HUD
 let config = {}; // Глобальна конфігурація
 
+const applyAppVersion = async () => {
+    try {
+        const version = await window.versions.getAppVersion();
+        const versionLabel = document.getElementById("app-version");
+        if (versionLabel && version) {
+            versionLabel.textContent = `v${version}`;
+        }
+    } catch (error) {
+        console.error("Failed to fetch app version:", error);
+    }
+};
+
 // Завантаження конфігурації
 const loadConfig = async () => {
     try {
@@ -156,3 +168,4 @@ document.getElementById("generate").addEventListener("click", e => {
 // Ініціалізація
 loadConfig();
 loadUserList();
+applyAppVersion();

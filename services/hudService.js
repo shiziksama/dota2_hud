@@ -2,7 +2,7 @@ import fs from 'fs';
 import * as pathUtils from '../utils/pathUtils.js';
 import * as stratzApi from '../api/stratzApi.js';
 import configService from '../services/configService.js';
-import { Notification } from "electron";
+import { Notification, app } from "electron";
 
 export async function getHeroIds(playerId, position, bracketIds, count, apiKey) {
     const response = await calculateHeroScores(playerId, position, bracketIds, apiKey);
@@ -137,8 +137,9 @@ export async function generateUserHuds() {
     }
 
     console.log('HUDs written successfully.');
+    const version = app.getVersion();
     new Notification({
-        title: 'HUD Generator',
+        title: `HUD Generator v${version}`,
         body: 'All HUDs generated successfully!',
     }).show();
 }

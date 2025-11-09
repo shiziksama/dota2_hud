@@ -7,6 +7,19 @@ body {
     color: #333;
 }
 
+.app-header {
+    max-width: 600px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-version {
+    font-size: 0.95em;
+    color: #666;
+}
+
 form {
     max-width: 600px;
     margin: 0 auto;
