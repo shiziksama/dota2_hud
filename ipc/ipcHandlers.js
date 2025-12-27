@@ -10,6 +10,10 @@ export function registerHandlers(ipcMain) {
     ipcMain.handle('getConfig', () => configService.getConfig());
     ipcMain.handle('setConfig', (event, config) => configService.setConfig(config));
     ipcMain.handle('getAppVersion', () => app.getVersion());
+    ipcMain.handle('previewHud', (event, payload) => {
+        const { userid, hudName, hudConfig, apiKey } = payload || {};
+        return hudService.previewHud(userid, hudName, hudConfig, apiKey);
+    });
 }
 
 export default {

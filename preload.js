@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld('versions', {
   generate: () => ipcRenderer.invoke('generate'),
   getHud: (userid) => ipcRenderer.invoke('getHud', userid),
   getAppVersion: () => ipcRenderer.invoke('getAppVersion'),
+  previewHud: (payload) => ipcRenderer.invoke('previewHud', payload),
   // we can also expose variables, not just functions
 })

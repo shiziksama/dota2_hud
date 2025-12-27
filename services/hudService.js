@@ -154,7 +154,25 @@ export async function getHud(userid) {
     return JSON.parse(fs.readFileSync(hudPath, 'utf-8'));
 }
 
+export async function previewHud(userid, hudName, hudConfig, apiKey) {
+    if (!userid || !hudName) {
+        throw new Error('userid and hudName are required to preview HUD.');
+    }
+
+    const hud = await getHud(userid);
+    const selectedConfig = hud?.configs?.find(cfg => cfg.config_name === hudName);
+    if (!selectedConfig) {
+        throw new Error(`HUD configuration "${hudName}" not found for user ${userid}.`);
+    }
+
+    const categoriesClone = JSON.parse(JSON.stringify(selectedConfig.categories || []));
+    const effectiveApiKey = apiKey || configService.getConfig().apiKey;
+    const previewedCategories = await generateHud(userid, categoriesClone, hudConfig || {}, effectiveApiKey);
+    return { categories: previewedCategories };
+}
+
 export default {
     generateUserHuds,
-    getHud
+    getHud,
+    previewHud
 };

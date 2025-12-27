@@ -7,27 +7,44 @@
   <link rel="stylesheet" href="./css/style.css"></link>
 </head>
 <body>
-<header class="app-header">
-  <h1>Dota 2 Hud Generator</h1>
-  <span id="app-version" class="app-version">v0.0.0</span>
-</header>
-<form id="form">
-  <div>
-    <label for="api-key">Stratz API Key:</label>
-    <input type="text" id="api-key" name="apiKey" placeholder="Enter your Stratz API Key">
-  </div>
-  <div>
-    <label for="userid">User ID:</label>
-    <select name="userid" id="userid"></select>
-  </div>
-  <div>
-    <label for="hudname">HUD Name:</label>
-    <select name="hudname" id="hudname"></select>
-  </div>
-  <div id="hud"></div>
-  <button id="save">Save</button>
-  <button id="generate">Generate</button>
-</form>
+<div class="app-shell">
+  <aside class="side-panel">
+    <header class="app-header">
+      <h1>Dota 2 Hud Generator</h1>
+      <span id="app-version" class="app-version">v0.0.0</span>
+    </header>
+    <form id="form" class="settings-form">
+      <div>
+        <label for="api-key">Stratz API Key:</label>
+        <input type="text" id="api-key" name="apiKey" placeholder="Enter your Stratz API Key">
+      </div>
+      <div>
+        <label for="userid">User ID:</label>
+        <select name="userid" id="userid"></select>
+      </div>
+      <div>
+        <label for="hudname">HUD Name:</label>
+        <select name="hudname" id="hudname"></select>
+      </div>
+      <div id="hud"></div>
+      <div class="form-actions">
+        <button id="save">Save</button>
+        <button id="generate" type="button">Generate</button>
+      </div>
+    </form>
+  </aside>
+  <main class="layout-stage-area">
+    <div class="hud-layout-wrapper">
+      <div class="hud-layout-header">
+        <h2>HUD Layout</h2>
+        <span class="hud-layout-hint">Scaled preview of category positions</span>
+      </div>
+      <div id="hud-stage" class="hud-stage">
+        <div class="hud-stage-message">Select a HUD to preview layout</div>
+      </div>
+    </div>
+  </main>
+</div>
 <script src="./js/jquery-3.7.1.min.js"></script>
 <script src="./js/jquery.serializejson.js"></script>
 <script type="module" src="./js/helpers.js"></script>
