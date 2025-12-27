@@ -2,34 +2,163 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'">
   <title>Dota 2 Hud Generator</title>
   <link rel="stylesheet" href="./css/style.css"></link>
 </head>
 <body>
-<div class="app-shell">
+<div class="app-shell" id="app" v-cloak>
   <aside class="side-panel">
     <header class="app-header">
       <h1>Dota 2 Hud Generator</h1>
-      <span id="app-version" class="app-version">v0.0.0</span>
+      <span id="app-version" class="app-version">{{ appVersion }}</span>
     </header>
-    <form id="form" class="settings-form">
+    <form id="form" class="settings-form" @submit.prevent="handleSave">
       <div>
         <label for="api-key">Stratz API Key:</label>
-        <input type="text" id="api-key" name="apiKey" placeholder="Enter your Stratz API Key">
+        <input
+          type="text"
+          id="api-key"
+          name="apiKey"
+          placeholder="Enter your Stratz API Key"
+          v-model="apiKey"
+        >
       </div>
       <div>
         <label for="userid">User ID:</label>
-        <select name="userid" id="userid"></select>
+        <select
+          name="userid"
+          id="userid"
+          v-model="selectedUserId"
+          :disabled="isLoadingUsers || !userIds.length"
+        >
+          <option
+            v-if="isLoadingUsers || !userIds.length"
+            value=""
+            disabled
+          >
+            {{ isLoadingUsers ? "Loading users..." : "No users found" }}
+          </option>
+          <option
+            v-for="userId in userIds"
+            :key="userId"
+            :value="userId"
+          >{{ userId }}</option>
+        </select>
       </div>
       <div>
         <label for="hudname">HUD Name:</label>
-        <select name="hudname" id="hudname"></select>
+        <select
+          name="hudname"
+          id="hudname"
+          v-model.number="selectedHudIndex"
+          :disabled="isLoadingHuds || !hudOptions.length"
+        >
+          <option
+            v-if="isLoadingHuds"
+            value="-1"
+            disabled
+          >
+            Loading HUDs...
+          </option>
+          <option
+            v-else-if="!hudOptions.length"
+            value="-1"
+            disabled
+          >
+            Select a user first
+          </option>
+          <option
+            v-for="(option, index) in hudOptions"
+            :key="option.config_name + index"
+            :value="index"
+          >
+            {{ option.config_name }}
+          </option>
+        </select>
       </div>
-      <div id="hud"></div>
+      <div id="hud">
+        <div
+          v-if="!categoryControls.length"
+          class="hud-empty-message"
+        >
+          Select a HUD to configure controls
+        </div>
+        <div
+          v-for="(entry, index) in categoryControls"
+          :key="entry.category?.category_name ? entry.category.category_name : 'category-' + index"
+          class="hud_element"
+        >
+          <span>{{ entry.category.category_name }}</span>
+          <div class="checkbox-wrapper">
+            <input
+              type="checkbox"
+              :id="`dont_change_${entry.category.category_name}`"
+              v-model="entry.values.dont_change"
+            >
+            <label :for="`dont_change_${entry.category.category_name}`">Dont change</label>
+          </div>
+          <div class="checkbox-wrapper">
+            <input
+              type="checkbox"
+              :id="`heroes_left_${entry.category.category_name}`"
+              v-model="entry.values.heroes_left"
+            >
+            <label :for="`heroes_left_${entry.category.category_name}`">remaining</label>
+          </div>
+          <div
+            class="select"
+            v-if="!entry.values.heroes_left"
+          >
+            <select
+              :name="`hud[${entry.category.category_name}][position]`"
+              v-model="entry.values.position"
+            >
+              <option value="">Select position</option>
+              <option
+                v-for="position in positions"
+                :key="position"
+                :value="position"
+              >
+                {{ position }}
+              </option>
+            </select>
+          </div>
+          <div class="ratings">
+            <div
+              class="checkbox-wrapper"
+              v-for="bracket in brackets"
+              :key="`${entry.category.category_name}-${bracket}`"
+            >
+              <input
+                type="checkbox"
+                :id="`bracket_${entry.category.category_name}_${bracket}`"
+                :value="bracket"
+                v-model="entry.values.bracket_ids"
+              >
+              <label :for="`bracket_${entry.category.category_name}_${bracket}`">{{ bracket }}</label>
+            </div>
+          </div>
+          <input
+            type="number"
+            :name="`hud[${entry.category.category_name}][count]`"
+            v-model.number="entry.values.count"
+            placeholder="Count"
+          >
+        </div>
+      </div>
       <div class="form-actions">
-        <button id="save">Save</button>
-        <button id="generate" type="button">Generate</button>
+        <button id="save" type="submit" :disabled="isSaving">
+          {{ isSaving ? "Saving..." : "Save" }}
+        </button>
+        <button
+          id="generate"
+          type="button"
+          @click="handleGenerate"
+          :disabled="isGenerating"
+        >
+          {{ isGenerating ? "Generating..." : "Generate" }}
+        </button>
       </div>
     </form>
   </aside>
@@ -39,15 +168,51 @@
         <h2>HUD Layout</h2>
         <span class="hud-layout-hint">Scaled preview of category positions</span>
       </div>
-      <div id="hud-stage" class="hud-stage">
-        <div class="hud-stage-message">Select a HUD to preview layout</div>
+      <div
+        id="hud-stage"
+        class="hud-stage"
+        :style="{ aspectRatio: `${stageMetrics.width} / ${stageMetrics.height}` }"
+      >
+        <div
+          v-if="!hudBlocks.length"
+          class="hud-stage-message"
+        >
+          Select a HUD to preview layout
+        </div>
+        <template v-else>
+          <div
+            v-for="block in hudBlocks"
+            :key="block.category_name"
+            class="hud-block"
+            :style="block.style"
+          >
+            <div class="hud-block__header">
+              <span>{{ block.category_name }}</span>
+              <span class="hud-block__coords">{{ block.coords }}</span>
+            </div>
+            <div
+              class="hero-tiles"
+              :class="{ empty: heroPreviewStates.get(block.category_name)?.empty }"
+            >
+              <template v-if="heroPreviewStates.get(block.category_name)?.message">
+                {{ heroPreviewStates.get(block.category_name)?.message }}
+              </template>
+              <template v-else>
+                <span
+                  v-for="heroId in heroPreviewStates.get(block.category_name)?.heroes || []"
+                  :key="`${block.category_name}-${heroId}`"
+                  class="hero-tile"
+                >
+                  {{ heroId }}
+                </span>
+              </template>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </main>
 </div>
-<script src="./js/jquery-3.7.1.min.js"></script>
-<script src="./js/jquery.serializejson.js"></script>
-<script type="module" src="./js/helpers.js"></script>
 <script type="module" src="./js/renderer.js"></script>
 </body>
 </html>

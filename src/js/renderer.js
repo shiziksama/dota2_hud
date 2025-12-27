@@ -1,12 +1,7 @@
-import { createCheckbox, createDropdown, POSITIONS, BRACKETS } from "./helpers.js";
+import { createApp, reactive, ref, computed, watch, onMounted } from "../../node_modules/vue/dist/vue.esm-browser.prod.js";
+import { POSITIONS, BRACKETS } from "./helpers.js";
 
-let hud = []; // Поточний HUD
-let config = {}; // Глобальна конфігурація
-let currentCategories = [];
-let previewCategories = [];
-let previewState = "idle"; // idle | loading | ready | error
-let previewError = null;
-let previewRequestId = 0;
+const DEFAULT_STAGE = { width: 1920, height: 1080 };
 
 const debounce = (fn, wait = 250) => {
     let timeout;
@@ -16,27 +11,10 @@ const debounce = (fn, wait = 250) => {
     };
 };
 
-const escapeAttributeValue = value => (value || "").replace(/'/g, "\\'");
-
-const buildFieldName = (categoryName, field, isArray = false) => {
-    const suffix = isArray ? "[]" : "";
-    return "hud[" + categoryName + "][" + field + "]" + suffix;
-};
-
-const buildSelector = (element, categoryName, field, isArray = false) => {
-    const name = escapeAttributeValue(buildFieldName(categoryName, field, isArray));
-    return element + "[name='" + name + "']";
-};
-
-const DEFAULT_STAGE = { width: 1920, height: 1080 };
-
-const percentOf = (value, total) => {
-    if (!total) return 0;
-    return (value / total) * 100;
-};
+const percentOf = (value, total) => (!total ? 0 : (value / total) * 100);
 
 const getStageMetrics = categories => {
-    if (!categories || !categories.length) {
+    if (!categories?.length) {
         return { ...DEFAULT_STAGE };
     }
 
@@ -57,55 +35,10 @@ const getStageMetrics = categories => {
     };
 };
 
-const getPreviewMap = () => {
-    const categoriesList = Array.isArray(previewCategories)
-        ? previewCategories
-        : Object.values(previewCategories || {});
-    return new Map(categoriesList.map(category => [category.category_name, category]));
-};
-
-const collectHudFormConfig = () => {
-    const result = {};
-    (currentCategories || []).forEach(category => {
-        const entry = {};
-        const dontChangeInput = document.querySelector(buildSelector("input", category.category_name, "dont_change"));
-        if (dontChangeInput) {
-            entry.dont_change = dontChangeInput.checked;
-        }
-
-        const heroesLeftInput = document.querySelector(buildSelector("input", category.category_name, "heroes_left"));
-        if (heroesLeftInput) {
-            entry.heroes_left = heroesLeftInput.checked;
-        }
-
-        if (!entry.heroes_left) {
-            const positionSelect = document.querySelector(buildSelector("select", category.category_name, "position"));
-            if (positionSelect && positionSelect.value) {
-                entry.position = positionSelect.value;
-            }
-        }
-
-        const bracketSelector = buildSelector("input", category.category_name, "bracket_ids", true);
-        const bracketInputs = document.querySelectorAll(bracketSelector);
-        entry.bracket_ids = Array.from(bracketInputs)
-            .filter(input => input.checked)
-            .map(input => input.value);
-
-        const countInput = document.querySelector(buildSelector("input", category.category_name, "count"));
-        if (countInput && countInput.value !== "") {
-            entry.count = Number(countInput.value);
-        }
-
-        result[category.category_name] = entry;
-    });
-
-    return result;
-};
-
-const mergeHudConfigs = (stored = {}, overrides = {}) => {
+const mergeHudConfigs = (stored = {}, overrides = {}, categories = []) => {
     const merged = {};
     const names = new Set([
-        ...(currentCategories || []).map(category => category.category_name),
+        ...categories.map(category => category.category_name),
         ...Object.keys(stored || {}),
     ]);
 
@@ -139,342 +72,348 @@ const mergeHudConfigs = (stored = {}, overrides = {}) => {
     return merged;
 };
 
-const renderHudLayout = () => {
-    const stage = document.getElementById("hud-stage");
-    if (!stage) return;
-
-    stage.innerHTML = "";
-
-    if (!currentCategories.length) {
-        const placeholder = document.createElement("div");
-        placeholder.className = "hud-stage-message";
-        placeholder.textContent = "Select a HUD to preview layout";
-        stage.appendChild(placeholder);
-        return;
-    }
-
-    const metrics = getStageMetrics(currentCategories);
-    stage.style.aspectRatio = `${metrics.width} / ${metrics.height}`;
-    currentCategories.forEach(category => {
-        const x = Number(category.x_position) || 0;
-        const y = Number(category.y_position) || 0;
-        const width = Number(category.width) || 0;
-        const height = Number(category.height) || 0;
-
-        const block = document.createElement("div");
-        block.className = "hud-block";
-        block.style.left = `${percentOf(x, metrics.width)}%`;
-        block.style.top = `${percentOf(y, metrics.height)}%`;
-        block.style.width = `${percentOf(width, metrics.width)}%`;
-        block.style.height = `${percentOf(height, metrics.height)}%`;
-
-        const header = document.createElement("div");
-        header.className = "hud-block__header";
-
-        const title = document.createElement("span");
-        title.textContent = category.category_name;
-        header.appendChild(title);
-
-        const coords = document.createElement("span");
-        coords.className = "hud-block__coords";
-        coords.textContent = `${Math.round(x)}, ${Math.round(y)}`;
-        header.appendChild(coords);
-
-        block.appendChild(header);
-
-        const heroTiles = document.createElement("div");
-        heroTiles.className = "hero-tiles empty";
-        heroTiles.dataset.category = category.category_name;
-
-        block.appendChild(heroTiles);
-        stage.appendChild(block);
-    });
-};
-
-const renderHeroPreview = () => {
-    const tileContainers = document.querySelectorAll(".hero-tiles");
-    const previewMap = getPreviewMap();
-
-    tileContainers.forEach(container => {
-        const categoryName = container.dataset.category;
-        container.innerHTML = "";
-        container.classList.remove("empty");
-
-        if (previewState === "idle") {
-            container.textContent = "Preview appears after HUD is selected";
-            container.classList.add("empty");
-            return;
-        }
-
-        if (previewState === "loading") {
-            container.textContent = "Loading preview...";
-            container.classList.add("empty");
-            return;
-        }
-
-        if (previewState === "error") {
-            container.textContent = previewError || "Failed to load hero list";
-            container.classList.add("empty");
-            return;
-        }
-
-        const previewCategory = previewMap.get(categoryName);
-        const heroList = previewCategory?.hero_ids || [];
-
-        if (!heroList.length) {
-            container.textContent = "No heroes found for this category";
-            container.classList.add("empty");
-            return;
-        }
-
-        heroList.forEach(heroId => {
-            const tile = document.createElement("span");
-            tile.className = "hero-tile";
-            tile.textContent = heroId;
-            container.appendChild(tile);
-        });
-    });
-};
-
-const refreshPreview = async () => {
-    if (!hud?.configs?.length) {
-        previewCategories = [];
-        previewState = "idle";
-        renderHeroPreview();
-        return;
-    }
-
-    const userId = document.getElementById("userid").value;
-    const hudIndex = document.getElementById("hudname").value;
-    const selectedHud = hud.configs[hudIndex];
-
-    if (!userId || !selectedHud) {
-        previewCategories = [];
-        previewState = "idle";
-        renderHeroPreview();
-        return;
-    }
-
-    const formConfig = collectHudFormConfig();
-    const storedConfig = (config[userId] && config[userId][selectedHud.config_name]) || {};
-    const mergedConfig = mergeHudConfigs(storedConfig, formConfig);
-    const apiKeyField = document.getElementById("api-key");
-    const apiKeyValue = (apiKeyField.value || "").trim() || config.apiKey;
-
-    previewState = "loading";
-    previewError = null;
-    previewRequestId += 1;
-    const requestId = previewRequestId;
-    renderHeroPreview();
-
-    try {
-        const response = await window.versions.previewHud({
-            userid: userId,
-            hudName: selectedHud.config_name,
-            hudConfig: mergedConfig,
-            apiKey: apiKeyValue,
-        });
-
-        if (requestId !== previewRequestId) return;
-
-        previewCategories = response?.categories || [];
-        previewState = "ready";
-        previewError = null;
-    } catch (error) {
-        if (requestId !== previewRequestId) return;
-        previewCategories = [];
-        previewState = "error";
-        previewError = error?.message || "Unable to load preview";
-        console.error("Failed to preview HUD:", error);
-    }
-
-    renderHeroPreview();
-};
-
-const schedulePreviewUpdate = debounce(() => {
-    refreshPreview();
-}, 400);
-
-const applyAppVersion = async () => {
-    try {
-        const version = await window.versions.getAppVersion();
-        const versionLabel = document.getElementById("app-version");
-        if (versionLabel && version) {
-            versionLabel.textContent = `v${version}`;
-        }
-    } catch (error) {
-        console.error("Failed to fetch app version:", error);
-    }
-};
-
-// Завантаження конфігурації
-const loadConfig = async () => {
-    try {
-        config = await window.versions.getConfig();
-        if (config.apiKey) {
-            document.getElementById("api-key").value = config.apiKey;
-        }
-    } catch (error) {
-        console.error("Помилка при завантаженні конфігурації:", error);
-    }
-};
-
-// Завантаження списку користувачів
-const loadUserList = async () => {
-    try {
-        const response = await window.versions.userlist();
-        const select = document.getElementById("userid");
-        select.innerHTML = ""; // Очищення попереднього списку
-        response.forEach(userId => {
-            const option = document.createElement("option");
-            option.value = userId;
-            option.textContent = userId;
-            select.appendChild(option);
-        });
-        loadHudList();
-    } catch (error) {
-        console.error("Помилка при завантаженні списку користувачів:", error);
-    }
-};
-
-// Завантаження списку HUD
-const loadHudList = async () => {
-    try {
-        const userId = document.getElementById("userid").value;
-        hud = await window.versions.getHud(userId);
-        const select = document.getElementById("hudname");
-        select.innerHTML = ""; // Очищення попереднього списку
-        hud.configs.forEach((config, index) => {
-            const option = document.createElement("option");
-            option.value = index;
-            option.textContent = config.config_name;
-            select.appendChild(option);
-        });
-        loadHud();
-    } catch (error) {
-        console.error("Помилка при завантаженні HUD:", error);
-    }
-};
-
-// Завантаження конкретного HUD
-const loadHud = () => {
-    const hudDiv = document.getElementById("hud");
-    const userId = document.getElementById("userid").value;
-    const hudName = document.getElementById("hudname").value;
-    const selectedConfig = hud.configs[hudName]?.categories || [];
-    const userConfig = (config[userId]?.[hud.configs[hudName]?.config_name]) || {};
-
-    currentCategories = selectedConfig;
-    hudDiv.innerHTML = ""; // Очищення попереднього HUD
-
-    selectedConfig.forEach(category => {
-        const elementValues = userConfig[category.category_name] || {};
-        hudDiv.appendChild(createHudElement(category, elementValues));
-    });
-
-    renderHudLayout();
-    renderHeroPreview();
-    refreshPreview();
-};
-
-// Створення елемента HUD
-const createHudElement = (category, elementValues) => {
-    const container = document.createElement("div");
-    container.className = "hud_element";
-
-    const categoryLabel = document.createElement("span");
-    categoryLabel.textContent = category.category_name;
-    container.appendChild(categoryLabel);
-
-    // Checkbox: Dont Change
-    container.appendChild(createCheckbox(
-        `hud[${category.category_name}][dont_change]`,
-        "Dont change",
-        elementValues.dont_change
-    ));
-
-    // Checkbox: Heroes Left
-    container.appendChild(createCheckbox(
-        `hud[${category.category_name}][heroes_left]`,
-        "remaining",
-        elementValues.heroes_left
-    ));
-
-    // Dropdown: Position (не потрібен, якщо вибрано heroes_left)
-    if (!elementValues.heroes_left) {
-        container.appendChild(createDropdown(
-            `hud[${category.category_name}][position]`,
-            POSITIONS,
-            elementValues.position
-        ));
-    }
-
-    // Ratings
-    const ratingsDiv = document.createElement("div");
-    ratingsDiv.className = "ratings";
-    BRACKETS.forEach(bracket => {
-        ratingsDiv.appendChild(createCheckbox(
-            `hud[${category.category_name}][bracket_ids][]`,
-            bracket,
-            elementValues.bracket_ids?.includes(bracket),
-            bracket
-        ));
-    });
-    container.appendChild(ratingsDiv);
-
-    // Input: Count
-    const countInput = document.createElement("input");
-    countInput.type = "number";
-    countInput.name = `hud[${category.category_name}][count]`;
-    countInput.value = elementValues.count || "";
-    container.appendChild(countInput);
-
-    return container;
-};
-
-// Обробка подій
-document.getElementById("hudname").addEventListener("change", loadHud);
-document.getElementById("userid").addEventListener("change", loadHudList);
-
-document.getElementById("save").addEventListener("click", async e => {
-    e.preventDefault();
-    const userId = document.getElementById("userid").value;
-    const hudName = hud.configs[document.getElementById("hudname").value]?.config_name;
-
-    // Збираємо всі дані з форми
-    const formData = jQuery("#form").serializeJSON();
-    config.apiKey = formData.apiKey; // Додаємо API Key до конфігурації
-    config[userId] = config[userId] || {};
-    config[userId][hudName] = formData.hud;
-
-    // Зберігаємо конфігурацію
-    try {
-        await window.versions.setConfig(config);
-        alert("Конфігурація успішно збережена!");
-    } catch (error) {
-        console.error("Помилка при збереженні конфігурації:", error);
-        alert("Не вдалося зберегти конфігурацію.");
-    }
+const createCategoryValues = storedValues => ({
+    dont_change: !!storedValues?.dont_change,
+    heroes_left: !!storedValues?.heroes_left,
+    position: storedValues?.position || "",
+    bracket_ids: Array.isArray(storedValues?.bracket_ids) ? [...storedValues.bracket_ids] : [],
+    count: storedValues?.count ?? "",
 });
 
-document.getElementById("generate").addEventListener("click", e => {
-    e.preventDefault();
-    window.versions.generate();
-});
+createApp({
+    setup() {
+        const hudData = ref({ configs: [] });
+        const configStore = ref({});
+        const userIds = ref([]);
+        const selectedUserId = ref("");
+        const selectedHudIndex = ref(-1);
+        const apiKey = ref("");
+        const appVersion = ref("v0.0.0");
+        const formValues = reactive({});
+        const previewCategories = ref([]);
+        const previewState = ref("idle");
+        const previewError = ref(null);
+        const previewRequestId = ref(0);
+        const isSaving = ref(false);
+        const isGenerating = ref(false);
+        const isLoadingUsers = ref(false);
+        const isLoadingHuds = ref(false);
 
-const hudControlsContainer = document.getElementById("hud");
-if (hudControlsContainer) {
-    hudControlsContainer.addEventListener("input", () => schedulePreviewUpdate());
-    hudControlsContainer.addEventListener("change", () => schedulePreviewUpdate());
-}
+        const hudOptions = computed(() => Array.isArray(hudData.value?.configs) ? hudData.value.configs : []);
+        const currentHud = computed(() => {
+            if (selectedHudIndex.value < 0) return null;
+            return hudOptions.value[selectedHudIndex.value] || null;
+        });
+        const currentCategories = computed(() => {
+            const categories = currentHud.value?.categories;
+            if (!Array.isArray(categories)) return [];
+            return categories.filter(category => category && category.category_name);
+        });
+        const stageMetrics = computed(() => getStageMetrics(currentCategories.value));
+        const hudBlocks = computed(() => {
+            const metrics = stageMetrics.value;
+            return currentCategories.value.map(category => {
+                const x = Number(category.x_position) || 0;
+                const y = Number(category.y_position) || 0;
+                const width = Number(category.width) || 0;
+                const height = Number(category.height) || 0;
+                return {
+                    category_name: category.category_name,
+                    coords: `${Math.round(x)}, ${Math.round(y)}`,
+                    style: {
+                        left: `${percentOf(x, metrics.width)}%`,
+                        top: `${percentOf(y, metrics.height)}%`,
+                        width: `${percentOf(width, metrics.width)}%`,
+                        height: `${percentOf(height, metrics.height)}%`,
+                    },
+                };
+            });
+        });
+        const userHudStoredConfig = computed(() => {
+            const userId = selectedUserId.value;
+            const hudName = currentHud.value?.config_name;
+            if (!userId || !hudName) return {};
+            return configStore.value?.[userId]?.[hudName] || {};
+        });
+        const hudFormConfig = computed(() => {
+            const result = {};
+            currentCategories.value.forEach(category => {
+                const values = formValues[category.category_name];
+                if (!values) return;
+                const entry = {
+                    dont_change: !!values.dont_change,
+                    heroes_left: !!values.heroes_left,
+                    bracket_ids: Array.isArray(values.bracket_ids) ? [...values.bracket_ids] : [],
+                };
+                if (!values.heroes_left && values.position) {
+                    entry.position = values.position;
+                }
+                if (values.count !== "" && values.count !== null && values.count !== undefined) {
+                    entry.count = Number(values.count);
+                }
+                result[category.category_name] = entry;
+            });
+            return result;
+        });
+        const heroPreviewStates = computed(() => {
+            const state = previewState.value;
+            const error = previewError.value;
+            const previewMap = new Map(previewCategories.value.map(category => [category.category_name, category]));
+            const map = new Map();
+            currentCategories.value.forEach(category => {
+                let entry;
+                if (state === "idle") {
+                    entry = { message: "Preview appears after HUD is selected", empty: true, heroes: [] };
+                } else if (state === "loading") {
+                    entry = { message: "Loading preview...", empty: true, heroes: [] };
+                } else if (state === "error") {
+                    entry = { message: error || "Failed to load hero list", empty: true, heroes: [] };
+                } else {
+                    const previewCategory = previewMap.get(category.category_name);
+                    const heroList = previewCategory?.hero_ids || [];
+                    if (!heroList.length) {
+                        entry = { message: "No heroes found for this category", empty: true, heroes: [] };
+                    } else {
+                        entry = { message: null, empty: false, heroes: heroList };
+                    }
+                }
+                map.set(category.category_name, entry);
+            });
+            return map;
+        });
 
-const apiKeyInput = document.getElementById("api-key");
-if (apiKeyInput) {
-    apiKeyInput.addEventListener("input", () => schedulePreviewUpdate());
-    apiKeyInput.addEventListener("change", () => schedulePreviewUpdate());
-}
+        const categoryControls = computed(() => {
+            const entries = [];
+            currentCategories.value.forEach(category => {
+                if (!category?.category_name) return;
+                if (!formValues[category.category_name]) {
+                    const storedValues = userHudStoredConfig.value?.[category.category_name];
+                    formValues[category.category_name] = createCategoryValues(storedValues);
+                }
+                entries.push({
+                    category,
+                    values: formValues[category.category_name],
+                });
+            });
+            return entries;
+        });
 
-// Ініціалізація
-loadConfig();
-loadUserList();
-applyAppVersion();
+        const setPreviewIdle = () => {
+            previewCategories.value = [];
+            previewState.value = "idle";
+            previewError.value = null;
+        };
+
+        const clearFormValues = () => {
+            Object.keys(formValues).forEach(key => {
+                delete formValues[key];
+            });
+        };
+
+        const rebuildFormValues = (categories, storedConfig = {}) => {
+            clearFormValues();
+            categories.forEach(category => {
+                if (!category?.category_name) return;
+                const storedValues = storedConfig[category.category_name] || {};
+                formValues[category.category_name] = createCategoryValues(storedValues);
+            });
+        };
+
+        const loadConfigStore = async () => {
+            try {
+                const stored = await window.versions.getConfig();
+                configStore.value = stored || {};
+                if (stored?.apiKey) {
+                    apiKey.value = stored.apiKey;
+                }
+            } catch (error) {
+                console.error("Failed to load config:", error);
+            }
+        };
+
+        const loadUserList = async () => {
+            isLoadingUsers.value = true;
+            try {
+                const response = await window.versions.userlist();
+                userIds.value = Array.isArray(response) ? response : [];
+                if (userIds.value.length) {
+                    if (!userIds.value.includes(selectedUserId.value)) {
+                        selectedUserId.value = userIds.value[0];
+                    }
+                } else {
+                    selectedUserId.value = "";
+                }
+            } catch (error) {
+                console.error("Failed to load users:", error);
+                userIds.value = [];
+                selectedUserId.value = "";
+            } finally {
+                isLoadingUsers.value = false;
+            }
+        };
+
+        const loadHudList = async userId => {
+            if (!userId) {
+                hudData.value = { configs: [] };
+                selectedHudIndex.value = -1;
+                return;
+            }
+            isLoadingHuds.value = true;
+            try {
+                const response = await window.versions.getHud(userId);
+                hudData.value = response || { configs: [] };
+                selectedHudIndex.value = Array.isArray(response?.configs) && response.configs.length ? 0 : -1;
+            } catch (error) {
+                console.error("Failed to load HUD list:", error);
+                hudData.value = { configs: [] };
+                selectedHudIndex.value = -1;
+            } finally {
+                isLoadingHuds.value = false;
+            }
+        };
+
+        const refreshPreview = async () => {
+            if (!hudOptions.value.length) {
+                setPreviewIdle();
+                return;
+            }
+            const userId = selectedUserId.value;
+            const hudEntry = currentHud.value;
+            if (!userId || !hudEntry) {
+                setPreviewIdle();
+                return;
+            }
+
+            const storedConfig = configStore.value?.[userId]?.[hudEntry.config_name] || {};
+            const mergedConfig = mergeHudConfigs(storedConfig, hudFormConfig.value, currentCategories.value);
+            const apiKeyValue = (apiKey.value || configStore.value?.apiKey || "").trim();
+
+            previewState.value = "loading";
+            previewError.value = null;
+            previewRequestId.value += 1;
+            const requestId = previewRequestId.value;
+
+            try {
+                const response = await window.versions.previewHud({
+                    userid: userId,
+                    hudName: hudEntry.config_name,
+                    hudConfig: mergedConfig,
+                    apiKey: apiKeyValue,
+                });
+                if (requestId !== previewRequestId.value) return;
+                previewCategories.value = response?.categories || [];
+                previewState.value = "ready";
+                previewError.value = null;
+            } catch (error) {
+                if (requestId !== previewRequestId.value) return;
+                previewCategories.value = [];
+                previewState.value = "error";
+                previewError.value = error?.message || "Unable to load preview";
+                console.error("Failed to preview HUD:", error);
+            }
+        };
+
+        const schedulePreviewUpdate = debounce(() => {
+            refreshPreview();
+        }, 400);
+
+        const handleSave = async () => {
+            if (!selectedUserId.value || !currentHud.value) {
+                alert("Please select a user and HUD first.");
+                return;
+            }
+            isSaving.value = true;
+            try {
+                const hudName = currentHud.value.config_name;
+                const nextConfig = JSON.parse(JSON.stringify(configStore.value || {}));
+                const hudConfigSnapshot = JSON.parse(JSON.stringify(hudFormConfig.value || {}));
+                nextConfig.apiKey = apiKey.value || "";
+                nextConfig[selectedUserId.value] = nextConfig[selectedUserId.value] || {};
+                nextConfig[selectedUserId.value][hudName] = hudConfigSnapshot;
+                await window.versions.setConfig(nextConfig);
+                configStore.value = nextConfig;
+                alert("Configuration saved!");
+            } catch (error) {
+                console.error("Failed to save config:", error);
+                alert("Failed to save configuration.");
+            } finally {
+                isSaving.value = false;
+            }
+        };
+
+        const handleGenerate = async () => {
+            isGenerating.value = true;
+            try {
+                await window.versions.generate();
+            } catch (error) {
+                console.error("Failed to generate HUD:", error);
+            } finally {
+                isGenerating.value = false;
+            }
+        };
+
+        const applyAppVersion = async () => {
+            try {
+                const version = await window.versions.getAppVersion();
+                if (version) {
+                    appVersion.value = `v${version}`;
+                }
+            } catch (error) {
+                console.error("Failed to fetch app version:", error);
+            }
+        };
+
+        watch(selectedUserId, userId => {
+            if (!userId) {
+                hudData.value = { configs: [] };
+                selectedHudIndex.value = -1;
+                clearFormValues();
+                setPreviewIdle();
+                return;
+            }
+            loadHudList(userId);
+        });
+
+        watch([currentCategories, userHudStoredConfig], ([categories, stored]) => {
+            if (!categories.length) {
+                clearFormValues();
+                setPreviewIdle();
+                return;
+            }
+            rebuildFormValues(categories, stored);
+            schedulePreviewUpdate();
+        }, { immediate: true });
+
+        watch(formValues, () => schedulePreviewUpdate(), { deep: true });
+        watch(apiKey, () => schedulePreviewUpdate());
+        watch(selectedHudIndex, () => schedulePreviewUpdate());
+
+        onMounted(async () => {
+            await Promise.all([loadConfigStore(), applyAppVersion()]);
+            await loadUserList();
+        });
+
+        return {
+            appVersion,
+            apiKey,
+            selectedUserId,
+            selectedHudIndex,
+            userIds,
+            hudOptions,
+            currentCategories,
+            formValues,
+            categoryControls,
+            positions: POSITIONS,
+            brackets: BRACKETS,
+            hudBlocks,
+            heroPreviewStates,
+            stageMetrics,
+            isSaving,
+            isGenerating,
+            isLoadingUsers,
+            isLoadingHuds,
+            handleSave,
+            handleGenerate,
+        };
+    },
+}).mount("#app");

@@ -1,3 +1,7 @@
+[v-cloak] {
+    display: none;
+}
+
 html, body {
     height: 100%;
 }
@@ -112,6 +116,13 @@ body {
     flex: 1;
     overflow-y: auto;
     margin-top: 10px;
+}
+
+.hud-empty-message {
+    padding: 20px;
+    text-align: center;
+    color: #777;
+    font-style: italic;
 }
 
 .alert {

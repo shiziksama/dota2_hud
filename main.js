@@ -19,7 +19,7 @@ const createWindow = () => {
             preload: path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'preload.js'),
         },
     });
-    win.setMenuBarVisibility(false);
+    //win.setMenuBarVisibility(false);
     win.maximize();
     win.loadFile('./src/index.html');
 };
