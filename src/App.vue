@@ -69,76 +69,10 @@
             </option>
           </select>
         </div>
-        <div id="hud">
-          <div
-            v-if="!visibleCategories.length"
-            class="hud-empty-message"
-          >
-            Select a HUD to configure controls
-          </div>
-          <div
-            v-for="(category, index) in visibleCategories"
-            :key="category.category_name ? category.category_name : 'category-' + index"
-            class="hud_element"
-          >
-            <span>{{ category.category_name }}</span>
-            <div class="checkbox-wrapper">
-              <input
-                type="checkbox"
-                :id="`dont_change_${category.category_name}`"
-                v-model="formValues[category.category_name].dont_change"
-              >
-              <label :for="`dont_change_${category.category_name}`">Dont change</label>
-            </div>
-            <div class="checkbox-wrapper">
-              <input
-                type="checkbox"
-                :id="`heroes_left_${category.category_name}`"
-                v-model="formValues[category.category_name].heroes_left"
-              >
-              <label :for="`heroes_left_${category.category_name}`">remaining</label>
-            </div>
-            <div
-              class="select"
-              v-if="!formValues[category.category_name].heroes_left"
-            >
-              <select
-                :name="`hud[${category.category_name}][position]`"
-                v-model="formValues[category.category_name].position"
-              >
-                <option value="">Select position</option>
-                <option
-                  v-for="position in positions"
-                  :key="position"
-                  :value="position"
-                >
-                  {{ position }}
-                </option>
-              </select>
-            </div>
-            <div class="ratings">
-              <div
-                class="checkbox-wrapper"
-                v-for="bracket in brackets"
-                :key="`${category.category_name}-${bracket}`"
-              >
-                <input
-                  type="checkbox"
-                  :id="`bracket_${category.category_name}_${bracket}`"
-                  :value="bracket"
-                  v-model="formValues[category.category_name].bracket_ids"
-                >
-                <label :for="`bracket_${category.category_name}_${bracket}`">{{ bracket }}</label>
-              </div>
-            </div>
-            <input
-              type="number"
-              :name="`hud[${category.category_name}][count]`"
-              v-model.number="formValues[category.category_name].count"
-              placeholder="Count"
-            >
-          </div>
-        </div>
+        <CategorySettings
+          :categories="visibleCategories"
+          :form-values="formValues"
+        />
         <div class="form-actions">
           <button id="save" type="submit" :disabled="isSaving">
             {{ isSaving ? "Saving..." : "Save" }}
@@ -166,10 +100,7 @@
 <script setup>
 import { reactive, ref, computed, watch, onMounted } from "vue";
 import HudStage from "./components/HudStage.vue";
-import { POSITIONS, BRACKETS } from "./js/helpers.js";
-
-const positions = POSITIONS;
-const brackets = BRACKETS;
+import CategorySettings from "./components/CategorySettings.vue";
 
 const debounce = (fn, wait = 250) => {
   let timeout;
