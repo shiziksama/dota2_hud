@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'">
   <title>Dota 2 Hud Generator</title>
-  <link rel="stylesheet" href="./css/style.css"></link>
+  <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
 <div class="app-shell" id="app" v-cloak>
@@ -79,40 +79,40 @@
       </div>
       <div id="hud">
         <div
-          v-if="!categoryControls.length"
+          v-if="!visibleCategories.length"
           class="hud-empty-message"
         >
           Select a HUD to configure controls
         </div>
         <div
-          v-for="(entry, index) in categoryControls"
-          :key="entry.category?.category_name ? entry.category.category_name : 'category-' + index"
+          v-for="(category, index) in visibleCategories"
+          :key="category.category_name ? category.category_name : 'category-' + index"
           class="hud_element"
         >
-          <span>{{ entry.category.category_name }}</span>
+          <span>{{ category.category_name }}</span>
           <div class="checkbox-wrapper">
             <input
               type="checkbox"
-              :id="`dont_change_${entry.category.category_name}`"
-              v-model="entry.values.dont_change"
+              :id="`dont_change_${category.category_name}`"
+              v-model="formValues[category.category_name].dont_change"
             >
-            <label :for="`dont_change_${entry.category.category_name}`">Dont change</label>
+            <label :for="`dont_change_${category.category_name}`">Dont change</label>
           </div>
           <div class="checkbox-wrapper">
             <input
               type="checkbox"
-              :id="`heroes_left_${entry.category.category_name}`"
-              v-model="entry.values.heroes_left"
+              :id="`heroes_left_${category.category_name}`"
+              v-model="formValues[category.category_name].heroes_left"
             >
-            <label :for="`heroes_left_${entry.category.category_name}`">remaining</label>
+            <label :for="`heroes_left_${category.category_name}`">remaining</label>
           </div>
           <div
             class="select"
-            v-if="!entry.values.heroes_left"
+            v-if="!formValues[category.category_name].heroes_left"
           >
             <select
-              :name="`hud[${entry.category.category_name}][position]`"
-              v-model="entry.values.position"
+              :name="`hud[${category.category_name}][position]`"
+              v-model="formValues[category.category_name].position"
             >
               <option value="">Select position</option>
               <option
@@ -128,21 +128,21 @@
             <div
               class="checkbox-wrapper"
               v-for="bracket in brackets"
-              :key="`${entry.category.category_name}-${bracket}`"
+              :key="`${category.category_name}-${bracket}`"
             >
               <input
                 type="checkbox"
-                :id="`bracket_${entry.category.category_name}_${bracket}`"
+                :id="`bracket_${category.category_name}_${bracket}`"
                 :value="bracket"
-                v-model="entry.values.bracket_ids"
+                v-model="formValues[category.category_name].bracket_ids"
               >
-              <label :for="`bracket_${entry.category.category_name}_${bracket}`">{{ bracket }}</label>
+              <label :for="`bracket_${category.category_name}_${bracket}`">{{ bracket }}</label>
             </div>
           </div>
           <input
             type="number"
-            :name="`hud[${entry.category.category_name}][count]`"
-            v-model.number="entry.values.count"
+            :name="`hud[${category.category_name}][count]`"
+            v-model.number="formValues[category.category_name].count"
             placeholder="Count"
           >
         </div>

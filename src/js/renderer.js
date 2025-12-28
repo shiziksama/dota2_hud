@@ -1,4 +1,4 @@
-import { createApp, reactive, ref, computed, watch, onMounted } from "../../node_modules/vue/dist/vue.esm-browser.prod.js";
+import { createApp, reactive, ref, computed, watch, onMounted } from "vue";
 import { POSITIONS, BRACKETS } from "./helpers.js";
 
 const DEFAULT_STAGE = { width: 1920, height: 1080 };
@@ -182,22 +182,6 @@ createApp({
             return map;
         });
 
-        const categoryControls = computed(() => {
-            const entries = [];
-            currentCategories.value.forEach(category => {
-                if (!category?.category_name) return;
-                if (!formValues[category.category_name]) {
-                    const storedValues = userHudStoredConfig.value?.[category.category_name];
-                    formValues[category.category_name] = createCategoryValues(storedValues);
-                }
-                entries.push({
-                    category,
-                    values: formValues[category.category_name],
-                });
-            });
-            return entries;
-        });
-
         const setPreviewIdle = () => {
             previewCategories.value = [];
             previewState.value = "idle";
@@ -218,6 +202,13 @@ createApp({
                 formValues[category.category_name] = createCategoryValues(storedValues);
             });
         };
+
+        const visibleCategories = computed(() => {
+            return currentCategories.value.filter(category => {
+                if (!category?.category_name) return false;
+                return !!formValues[category.category_name];
+            });
+        });
 
         const loadConfigStore = async () => {
             try {
@@ -402,7 +393,7 @@ createApp({
             hudOptions,
             currentCategories,
             formValues,
-            categoryControls,
+            visibleCategories,
             positions: POSITIONS,
             brackets: BRACKETS,
             hudBlocks,
