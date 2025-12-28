@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
 import path from "node:path";
 
 const root = path.resolve(__dirname, "src");
@@ -7,6 +8,7 @@ const outDir = path.resolve(__dirname, "dist/renderer");
 export default defineConfig({
   root,
   base: "./",
+  plugins: [vue()],
   server: {
     port: 5173,
     strictPort: true,
