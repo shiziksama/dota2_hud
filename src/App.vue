@@ -154,64 +154,20 @@
         </div>
       </form>
     </aside>
-    <main class="layout-stage-area">
-      <div class="hud-layout-wrapper">
-        <div class="hud-layout-header">
-          <h2>HUD Layout</h2>
-          <span class="hud-layout-hint">Scaled preview of category positions</span>
-        </div>
-        <div
-          id="hud-stage"
-          class="hud-stage"
-          :style="{ aspectRatio: `${stageMetrics.width} / ${stageMetrics.height}` }"
-        >
-          <div
-            v-if="!hudBlocks.length"
-            class="hud-stage-message"
-          >
-            Select a HUD to preview layout
-          </div>
-          <template v-else>
-            <div
-              v-for="block in hudBlocks"
-              :key="block.category_name"
-              class="hud-block"
-              :style="block.style"
-            >
-              <div class="hud-block__header">
-                <span>{{ block.category_name }}</span>
-                <span class="hud-block__coords">{{ block.coords }}</span>
-              </div>
-              <div
-                class="hero-tiles"
-                :class="{ empty: heroPreviewStates.get(block.category_name)?.empty }"
-              >
-                <template v-if="heroPreviewStates.get(block.category_name)?.message">
-                  {{ heroPreviewStates.get(block.category_name)?.message }}
-                </template>
-                <template v-else>
-                  <span
-                    v-for="heroId in heroPreviewStates.get(block.category_name)?.heroes || []"
-                    :key="`${block.category_name}-${heroId}`"
-                    class="hero-tile"
-                  >
-                    {{ heroId }}
-                  </span>
-                </template>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </main>
+    <HudStage
+      :categories="currentCategories"
+      :preview-state="previewState"
+      :preview-error="previewError"
+      :preview-categories="previewCategories"
+    />
   </div>
 </template>
 
 <script setup>
 import { reactive, ref, computed, watch, onMounted } from "vue";
+import HudStage from "./components/HudStage.vue";
 import { POSITIONS, BRACKETS } from "./js/helpers.js";
 
-const DEFAULT_STAGE = { width: 1920, height: 1080 };
 const positions = POSITIONS;
 const brackets = BRACKETS;
 
@@ -220,30 +176,6 @@ const debounce = (fn, wait = 250) => {
   return (...args) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => fn(...args), wait);
-  };
-};
-
-const percentOf = (value, total) => (!total ? 0 : (value / total) * 100);
-
-const getStageMetrics = categories => {
-  if (!categories?.length) {
-    return { ...DEFAULT_STAGE };
-  }
-
-  let maxX = 0;
-  let maxY = 0;
-  categories.forEach(category => {
-    const width = Number(category.width) || 0;
-    const height = Number(category.height) || 0;
-    const x = Number(category.x_position) || 0;
-    const y = Number(category.y_position) || 0;
-    maxX = Math.max(maxX, x + width);
-    maxY = Math.max(maxY, y + height);
-  });
-
-  return {
-    width: maxX || DEFAULT_STAGE.width,
-    height: maxY || DEFAULT_STAGE.height,
   };
 };
 
@@ -319,26 +251,6 @@ const currentCategories = computed(() => {
   if (!Array.isArray(categories)) return [];
   return categories.filter(category => category && category.category_name);
 });
-const stageMetrics = computed(() => getStageMetrics(currentCategories.value));
-const hudBlocks = computed(() => {
-  const metrics = stageMetrics.value;
-  return currentCategories.value.map(category => {
-    const x = Number(category.x_position) || 0;
-    const y = Number(category.y_position) || 0;
-    const width = Number(category.width) || 0;
-    const height = Number(category.height) || 0;
-    return {
-      category_name: category.category_name,
-      coords: `${Math.round(x)}, ${Math.round(y)}`,
-      style: {
-        left: `${percentOf(x, metrics.width)}%`,
-        top: `${percentOf(y, metrics.height)}%`,
-        width: `${percentOf(width, metrics.width)}%`,
-        height: `${percentOf(height, metrics.height)}%`,
-      },
-    };
-  });
-});
 const userHudStoredConfig = computed(() => {
   const userId = selectedUserId.value;
   const hudName = currentHud.value?.config_name;
@@ -365,33 +277,6 @@ const hudFormConfig = computed(() => {
   });
   return result;
 });
-const heroPreviewStates = computed(() => {
-  const state = previewState.value;
-  const error = previewError.value;
-  const previewMap = new Map(previewCategories.value.map(category => [category.category_name, category]));
-  const map = new Map();
-  currentCategories.value.forEach(category => {
-    let entry;
-    if (state === "idle") {
-      entry = { message: "Preview appears after HUD is selected", empty: true, heroes: [] };
-    } else if (state === "loading") {
-      entry = { message: "Loading preview...", empty: true, heroes: [] };
-    } else if (state === "error") {
-      entry = { message: error || "Failed to load hero list", empty: true, heroes: [] };
-    } else {
-      const previewCategory = previewMap.get(category.category_name);
-      const heroList = previewCategory?.hero_ids || [];
-      if (!heroList.length) {
-        entry = { message: "No heroes found for this category", empty: true, heroes: [] };
-      } else {
-        entry = { message: null, empty: false, heroes: heroList };
-      }
-    }
-    map.set(category.category_name, entry);
-  });
-  return map;
-});
-
 const visibleCategories = computed(() => {
   return currentCategories.value.filter(category => {
     if (!category?.category_name) return false;
