@@ -1,16 +1,21 @@
 {
   "type": "module",
   "name": "dota2_hud",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "dota2 hero grid from your stats",
   "main": "main.js",
   "scripts": {
-    "start": "electron-forge start",
+    "dev": "concurrently -k \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:vite": "vite dev --host --port 5173",
+    "dev:electron": "wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron-forge start",
+    "start": "npm run dev",
+    "start:prod": "npm run build:renderer && electron-forge start",
     "start_silent": "electron-forge start -- --silent",
-    "package": "electron-forge package",
+    "build:renderer": "vite build",
+    "package": "npm run build:renderer && electron-forge package",
     "package_old": "electron-packager ./ --platform=win32",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
+    "make": "npm run build:renderer && electron-forge make",
+    "publish": "npm run build:renderer && electron-forge publish",
     "start_old": "electron ."
   },
   "author": "shiziksama",
@@ -22,10 +27,16 @@
     "@electron-forge/maker-zip": "^7.6.0",
     "@electron-forge/plugin-auto-unpack-natives": "^6.4.2",
     "@electron-forge/publisher-github": "^6.4.2",
-    "electron": "^33.3.1"
+    "@vitejs/plugin-vue": "^6.0.3",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^33.3.1",
+    "vite": "^5.4.11",
+    "wait-on": "^7.2.0"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.0",
-    "electron-store": "^10.0.0"
+    "electron-store": "^10.0.0",
+    "vue": "^3.4.38"
   }
 }
